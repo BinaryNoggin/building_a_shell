@@ -25,6 +25,10 @@ defmodule Shell do
     :exit
   end
 
+  defp process_cmd("guess\n") do
+    Guess.run()
+  end
+
   defp process_cmd(unknown_command) do
     IO.puts("Unknown Command #{unknown_command}")
   end
