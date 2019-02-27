@@ -3,17 +3,29 @@ defmodule Shell do
     loop()
   end
 
-  def loop do
+  defp loop do
     IO.gets(">")
     |> process_cmd()
-    loop()
+    |> handle_status()
   end
 
-  def process_cmd("count\n") do
+  def handle_status(status) do
+    case status do
+      :ok -> loop()
+      :exit -> IO.puts("bye")
+    end
+  end
+
+  defp process_cmd("count\n") do
     Enum.each(10..1, &IO.puts/1)
+    :ok
   end
 
-  def process_cmd(unknown_command) do
+  defp process_cmd("exit\n") do
+    :exit
+  end
+
+  defp process_cmd(unknown_command) do
     IO.puts("Unknown Command #{unknown_command}")
   end
 end
