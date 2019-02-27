@@ -5,15 +5,30 @@ defmodule Guess do
   end
 
   defp loop(num) do
-    IO.gets("?>")
-    |> process_input(num)
+    input_pid = get_input()
+    process_input(input_pid, num)
     |> handle_status(num)
   end
 
-  def process_input(guess, num) do
-    guess
-    |> Integer.parse()
-    |> check_guess(num)
+  def get_input do
+    command = self()
+    spawn(fn->
+      input = IO.gets("?>") |> String.trim()
+      send(command, {:input, input})
+    end)
+  end
+
+  def process_input(input_pid, num) do
+    receive do
+      {:input, input} ->
+        input
+        |> Integer.parse()
+        |> check_guess(num)
+    after
+      :timer.seconds(10) ->
+        Process.exit(input_pid, :kill)
+        :exit
+    end
   end
 
   def check_guess({guess, _}, num) when guess == num do
