@@ -1,39 +1,28 @@
 defmodule Guess do
+  @behaviour Command
+
   def run do
-    Enum.random(1..100)
-    |> loop()
+    Command.run(__MODULE__, [])
   end
 
-  defp loop(num) do
-    input_pid = get_input()
-    process_input(input_pid, num)
-    |> handle_status(num)
+  def init(_) do
+    num = Enum.random(1..100)
+    {:ok, num}
   end
 
-  def get_input do
-    command = self()
-    spawn(fn->
-      input = IO.gets("?>") |> String.trim()
-      send(command, {:input, input})
-    end)
+  def handle_prompt(_) do
+    "?> "
   end
 
-  def process_input(input_pid, num) do
-    receive do
-      {:input, input} ->
-        input
-        |> Integer.parse()
-        |> check_guess(num)
-    after
-      :timer.seconds(10) ->
-        Process.exit(input_pid, :kill)
-        :exit
-    end
+  def handle_input(input, num) do
+    input
+    |> Integer.parse()
+    |> check_guess(num)
   end
 
   def check_guess({guess, _}, num) when guess == num do
     IO.puts("Correct")
-    :exit
+    {:exit, :ok, num}
   end
 
   def check_guess({guess, _}, num) when guess != num do
@@ -42,13 +31,6 @@ defmodule Guess do
     else
       IO.puts("higher")
     end
-    :ok
-  end
-
-  def handle_status(status, num) do
-    case status do
-      :ok -> loop(num)
-      :exit -> :ok
-    end
+    {:ok, num}
   end
 end

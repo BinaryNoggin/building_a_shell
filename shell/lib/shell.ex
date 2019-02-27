@@ -1,47 +1,37 @@
 defmodule Shell do
+  @behaviour Command
   def run do
-    loop()
+    Command.run(__MODULE__, [])
   end
 
-  defp loop do
-    input_pid = get_input()
-    process_input(input_pid)
-    |> handle_status()
+  def init(_) do
+    {:ok, nil}
   end
 
-  def get_input do
-    command = self()
-    spawn(fn->
-      input = IO.gets(">") |> String.trim()
-      send(command, {:input, input})
-    end)
+  def handle_prompt(_) do
+    "> "
   end
 
-  def process_input(input_pid) do
-    receive do
-      {:input, input} ->
-        process_cmd(input)
-    after
-      :timer.seconds(10) ->
-        Process.exit(input_pid, :kill)
-        :exit
-    end
+  def handle_input(input, state) do
+    process_cmd(input)
+    |> handle_response(state)
   end
 
-  def handle_status(status) do
-    case status do
-      :ok -> loop()
-      :exit -> IO.puts("bye")
-    end
+  def handle_response(:ok, state) do
+    {:ok, state}
+  end
+
+  def handle_response({:exit, reason}) do
+    reason
   end
 
   defp process_cmd("count") do
     Enum.each(10..1, &IO.puts/1)
-    :ok
+    {:ok, nil}
   end
 
   defp process_cmd("exit") do
-    :exit
+    {:exit, :normal, nil}
   end
 
   defp process_cmd("guess") do
